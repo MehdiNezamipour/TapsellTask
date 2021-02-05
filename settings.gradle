@@ -1,0 +1,3 @@
+include ':AdMadiator'
+include ':app'
+rootProject.name = "TapsellTask"
