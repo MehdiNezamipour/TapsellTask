@@ -16,7 +16,12 @@ allprojects {
     repositories {
         google()
         jcenter()
+
+        maven {
+            url 'https://dl.bintray.com/tapsellorg/maven'
+        }
     }
+
 }
 
 task clean(type: Delete) {
