@@ -1,5 +1,5 @@
 
-package com.nezamipour.mehdi.ad_mediator.models;
+package com.nezamipour.mehdi.admadiator.models;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;

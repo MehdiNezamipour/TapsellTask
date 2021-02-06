@@ -1,4 +1,4 @@
-package com.nezamipour.mehdi.ad_mediator.MainClasses;
+package com.nezamipour.mehdi.admadiator.mainclasses;
 
 public abstract class AdRequestCallback {
 

@@ -1,11 +1,11 @@
 
-package com.nezamipour.mehdi.ad_mediator.models;
-
-import java.io.Serializable;
-import java.util.List;
+package com.nezamipour.mehdi.admadiator.models;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+
+import java.io.Serializable;
+import java.util.List;
 
 public class AdConfig implements Serializable {
 
