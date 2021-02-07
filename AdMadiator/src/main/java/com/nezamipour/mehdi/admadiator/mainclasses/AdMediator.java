@@ -1,126 +1,151 @@
 package com.nezamipour.mehdi.admadiator.mainclasses;
 
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
-import android.widget.Toast;
 
-import com.chartboost.sdk.CBLocation;
+import com.chartboost.sdk.Chartboost;
+import com.chartboost.sdk.ChartboostAdListener;
 import com.google.gson.Gson;
 import com.nezamipour.mehdi.admadiator.models.AdConfig;
-import com.nezamipour.mehdi.admadiator.models.AdNetworks;
 import com.nezamipour.mehdi.admadiator.models.AppConfig;
-
-import ir.tapsell.sdk.Tapsell;
-
 import com.nezamipour.mehdi.admadiator.models.Waterfall;
 import com.nezamipour.mehdi.admadiator.utils.Constants;
+import com.unity3d.ads.IUnityAdsLoadListener;
 import com.unity3d.ads.UnityAds;
-import com.chartboost.sdk.Chartboost;
 
-import java.util.ArrayList;
-import java.util.List;
+import ir.tapsell.sdk.Tapsell;
+import ir.tapsell.sdk.TapsellAdRequestListener;
 
 
 public class AdMediator {
 
-
     private static AppConfig sAppConfig;
-    private static AdNetworks sAdNetworks;
     private static AdConfig sAdConfig;
+    private static Integer sIndex = 0;
 
     private static Handler sHandler = new Handler();
+    private static Waterfall sWaterfall;
 
     public AdMediator() {
     }
 
 
-    //appId is special id of app in our ad network
-    //zoneId is String that show type of Ad like : interstitialBanner or rewardedVideo
-    public static void initialize(Application application, String appId) {
-        //get add config for server with appId
-        // we use fake info here
-        Gson gson = new Gson();
-        sAppConfig = gson.fromJson(Constants.AD_CONFIG, AppConfig.class);
-        sAdConfig = gson.fromJson(Constants.AD_CONFIG, AdConfig.class);
-
-
+    public static void initialize(Application application, String adMediatorAppId) {
         getConfig();
         // initialization adNetworks base on appConfig
         if (sAppConfig.getAdNetworks().getTapsell() != null)
-            Tapsell.initialize(application, appId);
+            Tapsell.initialize(application, sAppConfig.getAdNetworks().getTapsell());
         if (sAppConfig.getAdNetworks().getChartboost() != null)
-            Chartboost.startWithAppId(application, appId, null);
+            Chartboost.startWithAppId(application, sAppConfig.getAdNetworks().getChartboost(), null);
         if (sAppConfig.getAdNetworks().getUnityAds() != null)
-            UnityAds.initialize(application, appId);
+            UnityAds.initialize(application, sAppConfig.getAdNetworks().getUnityAds());
+
     }
 
     private static void getConfig() {
         sAppConfig = new AppConfig();
-        sAdNetworks = new AdNetworks();
         sAdConfig = new AdConfig();
-
-        List<Waterfall> waterfalls = new ArrayList<>();
-        waterfalls.add(new Waterfall("UnityAds", "zoneIdInUnityAds", 2000));
-        waterfalls.add(new Waterfall("Tapsell", "zoneIdInTapsell", 3000));
-        waterfalls.add(new Waterfall("Chartboost", "zoneIdInChartboost", 1000));
-        sAdConfig.setZoneType("Interstitial");
-        sAdConfig.setWaterfall(waterfalls);
-        sAdConfig.setTtl(3600000);
-
-        sAdNetworks.setTapsell("appIdInTapsell");
-        sAdNetworks.setUnityAds("appIdInUnityAds");
-        sAdNetworks.setChartboost("appIdInChartboost");
-        sAppConfig.setAdNetworks(sAdNetworks);
+        //get add config from server with appId
+        // we use fake info here
+        Gson gson = new Gson();
+        sAppConfig = gson.fromJson(Constants.APP_CONFIG, AppConfig.class);
+        sAdConfig = gson.fromJson(Constants.AD_CONFIG, AdConfig.class);
     }
 
-    public static void requestAd(Context context, String zoneId) {
-        //TODO
-        // if appConfig and AdConfig catch available dont need to request to get them again form server
-        // else need to get all config again
-        String zoneType = sAdConfig.getZoneType();
-        for (Waterfall waterfall : sAdConfig.getWaterfall()) {
+    public static void requestAd(Context context, String adMediatorZoneId, AdRequestCallback adRequestCallback) {
+        sIndex = 0;
+        loadAd(context, adRequestCallback);
+    }
 
-            sHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    switch (waterfall.getAdNetwork()) {
-                        case "Tapsell":
-                            Tapsell.requestAd(context, zoneId);
-                            break;
-                        case "UnityAds":
-                            UnityAds.load(zoneId);
-                            break;
-                        case "Chartboost":
-                            Chartboost.cacheInterstitial(CBLocation.LOCATION_DEFAULT);
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }, waterfall.getTimeout());
-
+    private static void loadAd(Context context, AdRequestCallback adRequestCallback) {
+        if (sIndex > sAdConfig.getWaterfall().size()) {
+            adRequestCallback.error("not exist ad");
+            return;
         }
 
+        String zoneType = sAdConfig.getZoneType();
+        sWaterfall = sAdConfig.getWaterfall().get(sIndex);
+
+
+        switch (sWaterfall.getAdNetwork()) {
+            case "Tapsell":
+                sHandler.postDelayed(() -> {
+                    sIndex++;
+                    loadAd(context, adRequestCallback);
+
+                }, sWaterfall.getTimeout());
+                requestFromTapSell(context, sWaterfall.getZoneId(), adRequestCallback);
+                break;
+            case "UnityAds":
+                sHandler.postDelayed(() -> {
+                    sIndex++;
+                    loadAd(context, adRequestCallback);
+                }, sWaterfall.getTimeout());
+                requestFromUnityAd(context, sWaterfall.getZoneId(), adRequestCallback);
+                break;
+            case "Chartboost":
+                sHandler.postDelayed(() -> {
+                    sIndex++;
+                    loadAd(context, adRequestCallback);
+                }, sWaterfall.getTimeout());
+                if (zoneType.equals("Interstitial"))
+                    requestInterstitialFromChartBoost(sWaterfall.getZoneId());
+                else if (zoneType.equals("Rewarded"))
+                    requestRewardedFromChartBoost(sWaterfall.getZoneId());
+                break;
+            default:
+                adRequestCallback.error("network not exist");
+                break;
+        }
 
     }
 
-    public static void requestFromTapSell(Context context, String zoneId, AdRequestCallback adRequestCallback) {
-        Tapsell.requestAd(context, zoneId);
+    private static void requestFromTapSell(Context context, String tapSellZoneId, AdRequestCallback adRequestCallback) {
+        Tapsell.requestAd(context, tapSellZoneId, null, new TapsellAdRequestListener() {
+            @Override
+            public void onAdAvailable(String adId) {
+                super.onAdAvailable(adId);
+                adRequestCallback.onSuccess(adId);
+            }
+
+            @Override
+            public void onError(String adId) {
+                super.onError(adId);
+                sIndex++;
+                loadAd(context, adRequestCallback);
+
+            }
+        });
     }
 
-    public static void requestInterstitialVideo(Context context, String appId, AdRequestCallback adRequestCallback) {
 
+    private static void requestFromUnityAd(Context context, String unityAdZoneId, AdRequestCallback adRequestCallback) {
+        UnityAds.load(unityAdZoneId, new IUnityAdsLoadListener() {
+            @Override
+            public void onUnityAdsAdLoaded(String adId) {
+                adRequestCallback.onSuccess(adId);
+            }
+
+            @Override
+            public void onUnityAdsFailedToLoad(String adId) {
+                sIndex++;
+                loadAd(context, adRequestCallback);
+            }
+        });
     }
 
-    public static void requestRewardedVideo(Context context, String appId, AdRequestCallback adRequestCallback) {
+    private static void requestInterstitialFromChartBoost(String chartBoostZoneId) {
+        Chartboost.cacheInterstitial(chartBoostZoneId);
+    }
 
+    private static void requestRewardedFromChartBoost(String chartBoostZoneId) {
+        Chartboost.cacheRewardedVideo(chartBoostZoneId);
     }
 
 
-    public static void showAd(Context context, String appId, AdShowCallback adShowListener) {
-
+    public static void showAd(Context context, String zoneId, String adId, AdShowCallback adShowCallback) {
+        Tapsell.showAd(context, zoneId, adId, null, null);
     }
 
 
