@@ -19,6 +19,12 @@ public class Waterfall implements Serializable {
     private Integer timeout;
 
 
+    public Waterfall(String adNetwork, String zoneId, Integer timeout) {
+        this.adNetwork = adNetwork;
+        this.zoneId = zoneId;
+        this.timeout = timeout;
+    }
+
     public String getAdNetwork() {
         return adNetwork;
     }
