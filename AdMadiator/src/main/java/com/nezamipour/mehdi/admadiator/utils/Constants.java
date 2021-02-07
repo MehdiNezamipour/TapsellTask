@@ -11,15 +11,15 @@ public class Constants {
 
 
     //UnityAd
-    public static final String UNITY_AD_INTERSTITIAL_BANNER = null;
-    public static final String UNITY_AD_INTERSTITIAL_VIDEO = null;
-    public static final String UNITY_AD_REWARDED_VIDEO = null;
+    public static final String UNITY_AD_INTERSTITIAL_BANNER = "UNITY_AD_INTERSTITIAL_BANNER";
+    public static final String UNITY_AD_INTERSTITIAL_VIDEO = "UNITY_AD_INTERSTITIAL_VIDEO";
+    public static final String UNITY_AD_REWARDED_VIDEO = "UNITY_AD_REWARDED_VIDEO";
 
 
     //Chartboost
-    public static final String CHART_BOOST_INTERSTITIAL_BANNER = null;
-    public static final String CHART_BOOST_INTERSTITIAL_VIDEO = null;
-    public static final String CHART_BOOST_REWARDED_VIDEO = null;
+    public static final String CHART_BOOST_INTERSTITIAL_BANNER = "CHART_BOOST_INTERSTITIAL_BANNER";
+    public static final String CHART_BOOST_INTERSTITIAL_VIDEO = "CHART_BOOST_INTERSTITIAL_VIDEO";
+    public static final String CHART_BOOST_REWARDED_VIDEO = "CHART_BOOST_REWARDED_VIDEO";
 
 
     public static final String APP_CONFIG = "{\n" +

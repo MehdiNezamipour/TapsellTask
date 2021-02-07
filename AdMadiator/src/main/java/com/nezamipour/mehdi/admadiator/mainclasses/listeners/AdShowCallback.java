@@ -1,4 +1,4 @@
-package com.nezamipour.mehdi.admadiator.mainclasses;
+package com.nezamipour.mehdi.admadiator.mainclasses.listeners;
 
 public abstract class AdShowCallback {
 

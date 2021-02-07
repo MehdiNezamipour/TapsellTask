@@ -1,12 +1,15 @@
 package com.nezamipour.mehdi.admadiator.mainclasses;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
 
 import com.chartboost.sdk.Chartboost;
-import com.chartboost.sdk.ChartboostAdListener;
 import com.google.gson.Gson;
+import com.nezamipour.mehdi.admadiator.mainclasses.listeners.AdRequestCallback;
+import com.nezamipour.mehdi.admadiator.mainclasses.listeners.AdShowCallback;
+import com.nezamipour.mehdi.admadiator.mainclasses.listeners.UnityAdListeners;
 import com.nezamipour.mehdi.admadiator.models.AdConfig;
 import com.nezamipour.mehdi.admadiator.models.AppConfig;
 import com.nezamipour.mehdi.admadiator.models.Waterfall;
@@ -16,6 +19,7 @@ import com.unity3d.ads.UnityAds;
 
 import ir.tapsell.sdk.Tapsell;
 import ir.tapsell.sdk.TapsellAdRequestListener;
+import ir.tapsell.sdk.TapsellAdShowListener;
 
 
 public class AdMediator {
@@ -26,6 +30,8 @@ public class AdMediator {
 
     private static Handler sHandler = new Handler();
     private static Waterfall sWaterfall;
+    private static String sAdId;
+    private static String sZoneId;
 
     public AdMediator() {
     }
@@ -107,6 +113,7 @@ public class AdMediator {
             public void onAdAvailable(String adId) {
                 super.onAdAvailable(adId);
                 adRequestCallback.onSuccess(adId);
+                sAdId = adId;
             }
 
             @Override
@@ -144,8 +151,74 @@ public class AdMediator {
     }
 
 
-    public static void showAd(Context context, String zoneId, String adId, AdShowCallback adShowCallback) {
-        Tapsell.showAd(context, zoneId, adId, null, null);
+    public static void showAd(Context context, Activity activity, String zoneId, AdShowCallback adShowCallback) {
+
+        sZoneId = sAdConfig.getWaterfall().get(sIndex).getZoneId();
+        switch (sZoneId) {
+            case Constants.TAPSELL_INTERSTITIAL_BANNER:
+            case Constants.TAPSELL_INTERSTITIAL_VIDEO:
+            case Constants.TAPSELL_REWARDED_VIDEO:
+                showFromTapSell(context, sZoneId, sAdId, adShowCallback);
+                break;
+            case Constants.CHART_BOOST_INTERSTITIAL_BANNER:
+            case Constants.CHART_BOOST_INTERSTITIAL_VIDEO:
+                showInterstitialFromChartBoost(sZoneId);
+                break;
+            case Constants.CHART_BOOST_REWARDED_VIDEO:
+                showRewardedFromChartBoost(sZoneId);
+                break;
+            case Constants.UNITY_AD_INTERSTITIAL_BANNER:
+            case Constants.UNITY_AD_INTERSTITIAL_VIDEO:
+            case Constants.UNITY_AD_REWARDED_VIDEO:
+                showFromUnityAd(activity, sZoneId, adShowCallback);
+                break;
+
+            default:
+                adShowCallback.onError("network not exist");
+                break;
+        }
+    }
+
+    private static void showFromTapSell(Context context, String zoneId, String adId, AdShowCallback adShowCallback) {
+        Tapsell.showAd(context, zoneId, adId, null, new TapsellAdShowListener() {
+            @Override
+            public void onOpened() {
+                super.onOpened();
+                adShowCallback.onOpened();
+            }
+
+            @Override
+            public void onError(String s) {
+                super.onError(s);
+                adShowCallback.onError(s);
+            }
+        });
+    }
+
+    private static void showFromUnityAd(Activity activity, String zoneId, AdShowCallback adShowCallback) {
+        UnityAds.addListener(new UnityAdListeners() {
+            @Override
+            public void onUnityAdsStart(String placementId) {
+                super.onUnityAdsStart(placementId);
+                adShowCallback.onOpened();
+            }
+
+            @Override
+            public void onUnityAdsError(UnityAds.UnityAdsError error, String message) {
+                super.onUnityAdsError(error, message);
+                adShowCallback.onError(message);
+            }
+        });
+        if (UnityAds.isReady(zoneId))
+            UnityAds.show(activity, zoneId);
+    }
+
+    private static void showInterstitialFromChartBoost(String zoneId) {
+        Chartboost.showInterstitial(zoneId);
+    }
+
+    private static void showRewardedFromChartBoost(String zoneId) {
+        Chartboost.showRewardedVideo(zoneId);
     }
 
 
