@@ -13,5 +13,12 @@ then add these dependencies to app module:
 
  implementation 'com.github.MehdiNezamipour:TapsellTask:1.4'
  
+ 
+ 
+# Guide of usage
+  
+ call static methods on AdMediator class like initialize, adRequest, showAd. 
+
+ 
 
  
